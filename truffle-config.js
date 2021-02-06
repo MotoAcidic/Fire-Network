@@ -123,7 +123,7 @@ module.exports = {
     gasLimit: 9000000,
           // ,logger: console
       }),
-      gas: 8500000, // gas block limit
+      gas: 18500000, // gas block limit
     },
     // Useful for private networks
     // private: {

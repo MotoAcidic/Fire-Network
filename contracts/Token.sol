@@ -13,26 +13,23 @@ contract Token is IToken, ERC20, AccessControl {
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant SETTER_ROLE = keccak256("SETTER_ROLE");
 
-    uint256  _totalSupply = 21000000e18; //21m
+    uint _totalSupply = 21000000e18; //21m
+
+    uint internal constant _burnTransferPercent = 2; // .02% in basis points
+
+    event Transfer(address indexed from, address indexed to, uint tokens);
 
     // 5.25 million coins for swap of old chains
-    uint256 premineTotal_ = 10250000e18; // 10.25m coins total on launch
-    uint256 contractPremine_ = 5000000e18; // 5m coins
-    uint256 devPayment_ = 250000e18; // 250k coins
-    uint256 teamPremine_ = 500000e18; // 500k coins
-    uint256 abetPremine_ = 2250000e18; // 2.25m coin
-    uint256 becnPremine_ = 1750000e18; // 1.75m coin
-    uint256 xapPremine_ = 500000e18; // 500k coin
-    uint256 xxxPremine_ = 250000e18; // 250k coin
-    uint256 beezPremine_ = 250000e18; // 250k coin
+    uint internal _premineTotal = 10250000e18; // 10.25m coins total on launch
+    uint internal _contractPremine_ = 5000000e18; // 5m coins
+    uint internal _devPayment = 250000e18; // 250k coins
+    uint internal _teamPremine = 500000e18; // 500k coins
+    uint internal _abetPremine = 2250000e18; // 2.25m coin
+    uint internal _becnPremine = 1750000e18; // 1.75m coin
+    uint internal _xapPremine = 500000e18; // 500k coin
+    uint internal _xxxPremine = 250000e18; // 250k coin
+    uint internal _beezPremine = 250000e18; // 250k coin
     
-    address teamAddrs = TEAM_ADDRS;
-    address devAddrs = DEV_ADDRS;
-    address abetAddrs = ABET_ADDRS;
-    address becnAddrs = BECN_ADDRS;
-    address xapAddrs = XAP_ADDRS;
-    address xxxAddrs = XXX_ADDRS;
-    address beezAddrs = BEEZ_ADDRS;
     address internal constant DEV_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
     address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
     address internal constant ABET_ADDRS = 0x0C8a92f170BaF855d3965BA8554771f673Ed69a6;
@@ -57,14 +54,14 @@ contract Token is IToken, ERC20, AccessControl {
         address _setter
     ) public ERC20(_name, _symbol) {
         _setupRole(SETTER_ROLE, _setter);
-        _mint(DEV_ADDRS, devPayment_);
-        _mint(msg.sender, contractPremine_);
-        _mint(TEAM_ADDRS, teamPremine_);
-        _mint(ABET_ADDRS, abetPremine_);
-        _mint(BECN_ADDRS, becnPremine_);
-        _mint(XAP_ADDRS, xapPremine_);
-        _mint(XXX_ADDRS, xxxPremine_);
-        _mint(BEEZ_ADDRS, beezPremine_);
+        _mint(DEV_ADDRS, _devPayment);
+        _mint(msg.sender, _contractPremine);
+        _mint(TEAM_ADDRS, _teamPremine);
+        _mint(ABET_ADDRS, _abetPremine);
+        _mint(BECN_ADDRS, _becnPremine);
+        _mint(XAP_ADDRS, _xapPremine);
+        _mint(XXX_ADDRS, _xxxPremine);
+        _mint(BEEZ_ADDRS, _beezPremine);
     }
 
     function init(address[] calldata instances) external onlySetter {
@@ -80,14 +77,14 @@ contract Token is IToken, ERC20, AccessControl {
     //                              Premine Functions
     // ------------------------------------------------------------------------
 
-    function contractPremine() public view returns (uint256) { return contractPremine_; }
-    function teamPremine() public view returns (uint256) { return teamPremine_; }
-    function devPayment() public view returns (uint256) { return devPayment_; }
-    function abetPremine() public view returns (uint256) { return abetPremine_; }
-    function becnPremine() public view returns (uint256) { return becnPremine_; }
-    function xapPremine() public view returns (uint256) { return xapPremine_; }
-    function xxxPremine() public view returns (uint256) { return xxxPremine_; }
-    function beezPremine() public view returns (uint256) { return beezPremine_; }
+    function contractPremine() public view returns (uint256) { return _contractPremine; }
+    function teamPremine() public view returns (uint256) { return _teamPremine; }
+    function devPayment() public view returns (uint256) { return _devPayment; }
+    function abetPremine() public view returns (uint256) { return _abetPremine; }
+    function becnPremine() public view returns (uint256) { return _becnPremine; }
+    function xapPremine() public view returns (uint256) { return _xapPremine; }
+    function xxxPremine() public view returns (uint256) { return _xxxPremine; }
+    function beezPremine() public view returns (uint256) { return _beezPremine; }
 
     function getMinterRole() external pure returns (bytes32) {
         return MINTER_ROLE;
@@ -105,6 +102,23 @@ contract Token is IToken, ERC20, AccessControl {
         _burn(from, amount);
     }
 
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
+        uint256 finalAmount;
+        uint256 amountToBurn = amount.mul(_burnTransferPercent).div(10000);
+        
+        _burn(msg.sender, amountToBurn);
+        
+        finalAmount = amount.sub(amountToBurn);
+
+        _beforeTokenTransfer(msg.sender, recipient, finalAmount);
+
+        balances[msg.sender] = balances[msg.sender].sub(finalAmount, "ERC20: transfer amount exceeds balance");
+        balances[recipient] = balances[recipient].add(finalAmount);
+        emit Transfer(msg.sender, recipient, finalAmount);
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
+    
     // Helpers
     function getNow() external view returns (uint256) {
         return now;
