@@ -2,13 +2,19 @@
 
 pragma solidity >=0.4.25 <0.7.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/IToken.sol";
 
-contract Token is IToken, ERC20, AccessControl {
+contract Token is IToken, AccessControl {
     using SafeMath for uint256;
+
+    string internal constant name = "Fyre Network";
+    string internal constant symbol = "FYRE";
+
+    mapping(address => uint256) balances;
+    mapping (address => mapping (address => uint256)) private _allowances;
+    mapping(address => mapping (address => uint256)) allowed;
 
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant SETTER_ROLE = keccak256("SETTER_ROLE");
@@ -18,25 +24,15 @@ contract Token is IToken, ERC20, AccessControl {
     uint internal constant _burnTransferPercent = 2; // .02% in basis points
 
     event Transfer(address indexed from, address indexed to, uint tokens);
-
-    // 5.25 million coins for swap of old chains
-    uint internal _premineTotal = 10250000e18; // 10.25m coins total on launch
-    uint internal _contractPremine_ = 5000000e18; // 5m coins
-    uint internal _devPayment = 250000e18; // 250k coins
-    uint internal _teamPremine = 500000e18; // 500k coins
-    uint internal _abetPremine = 2250000e18; // 2.25m coin
-    uint internal _becnPremine = 1750000e18; // 1.75m coin
-    uint internal _xapPremine = 500000e18; // 500k coin
-    uint internal _xxxPremine = 250000e18; // 250k coin
-    uint internal _beezPremine = 250000e18; // 250k coin
+    event Burn(address indexed from, uint256 value);
+    event Mint(address indexed _address, uint _reward);
     
-    address internal constant DEV_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
+    // 5.25 million coins for swap of old chains
+    uint internal _contractPremine = 5000000e18; // 5m coins
+    uint internal _teamPayment = 250000e18; // 250k coins
+    
+    address internal constant SWAP_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
     address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant ABET_ADDRS = 0x0C8a92f170BaF855d3965BA8554771f673Ed69a6;
-    address internal constant BECN_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant XAP_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant XXX_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
-    address internal constant BEEZ_ADDRS = 0x96C418fFc085107aE72127FE70574754ae3D7047;
 
     modifier onlyMinter() {
         require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
@@ -49,19 +45,11 @@ contract Token is IToken, ERC20, AccessControl {
     }
 
     constructor(
-        string memory _name,
-        string memory _symbol,
         address _setter
-    ) public ERC20(_name, _symbol) {
+    ) public {
         _setupRole(SETTER_ROLE, _setter);
-        _mint(DEV_ADDRS, _devPayment);
-        _mint(msg.sender, _contractPremine);
-        _mint(TEAM_ADDRS, _teamPremine);
-        _mint(ABET_ADDRS, _abetPremine);
-        _mint(BECN_ADDRS, _becnPremine);
-        _mint(XAP_ADDRS, _xapPremine);
-        _mint(XXX_ADDRS, _xxxPremine);
-        _mint(BEEZ_ADDRS, _beezPremine);
+        mint(SWAP_ADDRS, _contractPremine);
+        mint(TEAM_ADDRS, _teamPayment);
     }
 
     function init(address[] calldata instances) external onlySetter {
@@ -78,13 +66,7 @@ contract Token is IToken, ERC20, AccessControl {
     // ------------------------------------------------------------------------
 
     function contractPremine() public view returns (uint256) { return _contractPremine; }
-    function teamPremine() public view returns (uint256) { return _teamPremine; }
-    function devPayment() public view returns (uint256) { return _devPayment; }
-    function abetPremine() public view returns (uint256) { return _abetPremine; }
-    function becnPremine() public view returns (uint256) { return _becnPremine; }
-    function xapPremine() public view returns (uint256) { return _xapPremine; }
-    function xxxPremine() public view returns (uint256) { return _xxxPremine; }
-    function beezPremine() public view returns (uint256) { return _beezPremine; }
+    function teamPremine() public view returns (uint256) { return _teamPayment; }
 
     function getMinterRole() external pure returns (bytes32) {
         return MINTER_ROLE;
@@ -94,19 +76,37 @@ contract Token is IToken, ERC20, AccessControl {
         return SETTER_ROLE;
     }
 
-    function mint(address to, uint256 amount) external override onlyMinter {
-        _mint(to, amount);
+    function balanceOf(address account) public override view returns (uint256) {
+        return balances[account];
     }
 
-    function burn(address from, uint256 amount) external override onlyMinter {
-        _burn(from, amount);
+    function burn(address account, uint256 amount) public override {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _beforeTokenTransfer(account, address(0), amount);
+
+        require(balances[account] >= amount, "ERC20: burn amount exceeds balance");
+        balances[account] -= amount;
+        _totalSupply -= amount;
+        emit Transfer(account, address(0), amount);
+    }
+
+    function mint(address account, uint256 amount) public override {
+        require(account != address(0), "ERC20: mint to the zero address");
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
+
+        _beforeTokenTransfer(address(0), account, amount);
+
+        _totalSupply += amount;
+        balances[account] += amount;
+        emit Transfer(address(0), account, amount);
     }
 
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         uint256 finalAmount;
         uint256 amountToBurn = amount.mul(_burnTransferPercent).div(10000);
         
-        _burn(msg.sender, amountToBurn);
+        burn(msg.sender, amountToBurn);
         
         finalAmount = amount.sub(amountToBurn);
 
@@ -115,6 +115,26 @@ contract Token is IToken, ERC20, AccessControl {
         balances[msg.sender] = balances[msg.sender].sub(finalAmount, "ERC20: transfer amount exceeds balance");
         balances[recipient] = balances[recipient].add(finalAmount);
         emit Transfer(msg.sender, recipient, finalAmount);
+    }
+
+    function transferFrom(address owner, address buyer, uint256 amount) public override returns (bool) {
+        require(amount <= balances[owner]);
+        require(amount <= allowed[owner][msg.sender]);
+        balances[owner] = balances[owner].sub(amount);
+        allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(amount);
+        balances[buyer] = balances[buyer].add(amount);
+        emit Transfer(owner, buyer, amount);
+        return true;
+    }
+
+    function allowance(address owner, address delegate) public override view returns (uint) {
+        return allowed[owner][delegate];
+    }
+
+    function approve(address delegate, uint256 amount) public override returns (bool) {
+        allowed[msg.sender][delegate] = amount;
+        emit Approval(msg.sender, delegate, amount);
+        return true;
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual { }
