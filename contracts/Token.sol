@@ -9,9 +9,6 @@ import "./interfaces/IToken.sol";
 contract Token is IToken, AccessControl {
     using SafeMath for uint256;
 
-    string internal constant name = "Fyre Network";
-    string internal constant symbol = "FYRE";
-
     mapping(address => uint256) balances;
     mapping (address => mapping (address => uint256)) private _allowances;
     mapping(address => mapping (address => uint256)) allowed;
@@ -19,20 +16,16 @@ contract Token is IToken, AccessControl {
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant SETTER_ROLE = keccak256("SETTER_ROLE");
 
-    uint _totalSupply = 21000000e18; //21m
-
     uint internal constant _burnTransferPercent = 2; // .02% in basis points
 
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Burn(address indexed from, uint256 value);
     event Mint(address indexed _address, uint _reward);
     
-    // 5.25 million coins for swap of old chains
-    uint internal _contractPremine = 5000000e18; // 5m coins
-    uint internal _teamPayment = 250000e18; // 250k coins
-    
-    address internal constant SWAP_ADDRS = 0xD53C2fdaaE4B520f41828906d8737ED42b0966Ba;
-    address internal constant TEAM_ADDRS = 0xe3C17f1a7f2414FF09b6a569CdB1A696C2EB9929;
+    uint internal _swapPremine = 20000000000e18; // 20b coins
+    uint internal _teamPremine = 5000000000e18; // 3b coins
+    uint internal _devPremine = 5000000000e18; // 5b coins
+    uint internal _uniPremine = 90000000000e18; // 90b coins
 
     modifier onlyMinter() {
         require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
@@ -45,11 +38,20 @@ contract Token is IToken, AccessControl {
     }
 
     constructor(
-        address _setter
+        string memory _name,
+        string memory _symbol,
+        address _setter,
+        address _swap,
+        address _team,
+        address _dev,
+        address _uni
     ) public {
         _setupRole(SETTER_ROLE, _setter);
-        mint(SWAP_ADDRS, _contractPremine);
-        mint(TEAM_ADDRS, _teamPayment);
+        _setupRole(MINTER_ROLE, msg.sender);
+        mint(_swap, _swapPremine);
+        mint(_team, _teamPremine);
+        mint(_dev, _devPremine);
+        mint(_uni, _uniPremine);
     }
 
     function init(address[] calldata instances) external onlySetter {
@@ -60,13 +62,6 @@ contract Token is IToken, AccessControl {
         }
         renounceRole(SETTER_ROLE, _msgSender());
     }
-
-    // ------------------------------------------------------------------------
-    //                              Premine Functions
-    // ------------------------------------------------------------------------
-
-    function contractPremine() public view returns (uint256) { return _contractPremine; }
-    function teamPremine() public view returns (uint256) { return _teamPayment; }
 
     function getMinterRole() external pure returns (bytes32) {
         return MINTER_ROLE;
@@ -93,7 +88,7 @@ contract Token is IToken, AccessControl {
 
     function mint(address account, uint256 amount) public override {
         require(account != address(0), "ERC20: mint to the zero address");
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender) || hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
+        require(hasRole(MINTER_ROLE, msg.sender), "Caller is not a minter");
 
         _beforeTokenTransfer(address(0), account, amount);
 

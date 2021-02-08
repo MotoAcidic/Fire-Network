@@ -12,11 +12,27 @@ module.exports = async function (deployer, network, accounts) {
 
                 const {
                     SETTER_ADDRESS,
+                    SWAP_ADDRESS,
+                    TEAM_ADDRESS,
+                    DEV_ADDRESS,
+                    UNI_ADDRESS,
                     TOKEN_NAME,
                     TOKEN_SYMBOL,
                 } = process.env;
 
                 if (SETTER_ADDRESS == null) {
+                    throw 'Setter address not found. Aborting'
+                }
+                if (SWAP_ADDRESS == null) {
+                    throw 'Setter address not found. Aborting'
+                }
+                if (TEAM_ADDRESS == null) {
+                    throw 'Setter address not found. Aborting'
+                }
+                if (DEV_ADDRESS == null) {
+                    throw 'Setter address not found. Aborting'
+                }
+                if (UNI_ADDRESS == null) {
                     throw 'Setter address not found. Aborting'
                 }
                 if (TOKEN_NAME == null) {
@@ -27,6 +43,10 @@ module.exports = async function (deployer, network, accounts) {
                 }
 
                 console.log('Setter address: ', SETTER_ADDRESS);
+                console.log('Setter address: ', SWAP_ADDRESS);
+                console.log('Setter address: ', TEAM_ADDRESS);
+                console.log('Setter address: ', DEV_ADDRESS);
+                console.log('Setter address: ', UNI_ADDRESS);
                 console.log('Token name: ', TOKEN_NAME);
                 console.log('Token symbol: ', TOKEN_SYMBOL)
 
@@ -35,7 +55,11 @@ module.exports = async function (deployer, network, accounts) {
                     Token,
                     TOKEN_NAME,
                     TOKEN_SYMBOL,
-                    SETTER_ADDRESS
+                    SETTER_ADDRESS,
+                    SWAP_ADDRESS,
+                    TEAM_ADDRESS,
+                    DEV_ADDRESS,
+                    UNI_ADDRESS
                 )
 
                 // DEPLOY AUCTION
