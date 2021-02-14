@@ -115,7 +115,8 @@ contract Staking is IStaking, AccessControl {
     function stake(uint256 amount, uint256 stakingDays) external {
         if (now >= nextPayoutCall) makePayout();
 
-        require(stakingDays > 0, "stakingDays < 1");
+        require(stakingDays > 0, "stakingDays < 1");        
+        require(stakingDays <= 3650, 'Staking: Staking days > 3650'); // 10 years
 
         uint256 start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
@@ -154,7 +155,8 @@ contract Staking is IStaking, AccessControl {
     ) external override onlyExternalStaker {
         if (now >= nextPayoutCall) makePayout();
 
-        require(stakingDays > 0, "stakingDays < 1");
+        require(stakingDays > 0, "stakingDays < 1");        
+        require(stakingDays <= 3650, 'Staking: Staking days > 3650');
 
         uint256 start = now;
         uint256 end = now.add(stakingDays.mul(stepTimestamp));
@@ -389,7 +391,7 @@ contract Staking is IStaking, AccessControl {
             globalPayin
         );
 
-        uint256 inflation = uint256(8)
+        uint256 inflation = uint256(3)
             .mul(currentTokenTotalSupply.add(sharesTotalSupply))
             .div(36500);
 
@@ -415,7 +417,7 @@ contract Staking is IStaking, AccessControl {
 
         IToken(mainToken).burn(address(this), amountTokenInDay);
 
-        uint256 inflation = uint256(8)
+        uint256 inflation = uint256(3)
             .mul(currentTokenTotalSupply.add(sharesTotalSupply))
             .div(36500);
 

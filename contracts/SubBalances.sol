@@ -367,7 +367,7 @@ contract SubBalances is ISubBalances, AccessControl {
     function _bpdAmountFromRaw(uint256 yearTokenAmount) internal view returns (uint256 totalAmount, uint256 addAmount) {
     	uint256 currentTokenTotalSupply = IERC20(mainToken).totalSupply();
 
-        uint256 inflation = uint256(8).mul(currentTokenTotalSupply.add(currentSharesTotalSupply)).div(36500);
+        uint256 inflation = uint256(3).mul(currentTokenTotalSupply.add(currentSharesTotalSupply)).div(36500);
 
         
         uint256 criticalMassCoeff = IForeignSwap(foreignSwap).getCurrentClaimedAmount().mul(1e18).div(
