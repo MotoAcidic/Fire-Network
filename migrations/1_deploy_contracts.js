@@ -13,9 +13,14 @@ module.exports = async function (deployer, network, accounts) {
                 const {
                     SETTER_ADDRESS,
                     SWAP_ADDRESS,
-                    TEAM_ADDRESS,
+                    TEAM_ADDRESS,                    
                     DEV_ADDRESS,
                     UNI_ADDRESS,
+                    UNI_PRESALE_ADDRESS,
+                    MARKETING_PRESALE_ADDRESS,
+                    DEV_PRESALE_ADDRESS,
+                    WEB_PRESALE_ADDRESS,
+                    WRITER_PRESALE_ADDRESS,
                     TOKEN_NAME,
                     TOKEN_SYMBOL,
                 } = process.env;
@@ -24,16 +29,31 @@ module.exports = async function (deployer, network, accounts) {
                     throw 'Setter address not found. Aborting'
                 }
                 if (SWAP_ADDRESS == null) {
-                    throw 'Setter address not found. Aborting'
+                    throw 'Swap address not found. Aborting'
                 }
                 if (TEAM_ADDRESS == null) {
-                    throw 'Setter address not found. Aborting'
+                    throw 'Team address not found. Aborting'
                 }
                 if (DEV_ADDRESS == null) {
-                    throw 'Setter address not found. Aborting'
+                    throw 'Dev address not found. Aborting'
                 }
                 if (UNI_ADDRESS == null) {
-                    throw 'Setter address not found. Aborting'
+                    throw 'Uni address not found. Aborting'
+                }
+                if (UNI_PRESALE_ADDRESS == null) {
+                    throw 'Uni Presale address not found. Aborting'
+                }
+                if (DEV_PRESALE_ADDRESS == null) {
+                    throw 'Dev Presale address not found. Aborting'
+                }
+                if (WEB_PRESALE_ADDRESS == null) {
+                    throw 'Web Presale address not found. Aborting'
+                }
+                if (WRITER_PRESALE_ADDRESS == null) {
+                    throw 'Writer Presale address not found. Aborting'
+                }
+                if (MARKETING_PRESALE_ADDRESS == null) {
+                    throw 'Marketing Presale address not found. Aborting'
                 }
                 if (TOKEN_NAME == null) {
                     throw 'Token name parameter not found. Aborting'
@@ -43,10 +63,15 @@ module.exports = async function (deployer, network, accounts) {
                 }
 
                 console.log('Setter address: ', SETTER_ADDRESS);
-                console.log('Setter address: ', SWAP_ADDRESS);
-                console.log('Setter address: ', TEAM_ADDRESS);
-                console.log('Setter address: ', DEV_ADDRESS);
-                console.log('Setter address: ', UNI_ADDRESS);
+                console.log('Swap address: ', SWAP_ADDRESS);
+                console.log('Team address: ', TEAM_ADDRESS);
+                console.log('Dev address: ', DEV_ADDRESS);
+                console.log('Uni address: ', UNI_ADDRESS);
+                console.log('Uni Presale address: ', UNI_PRESALE_ADDRESS);
+                console.log('Marketing Presale address: ', MARKETING_PRESALE_ADDRESS);
+                console.log('Dev Presale address: ', DEV_PRESALE_ADDRESS);
+                console.log('Web Presale address: ', WEB_PRESALE_ADDRESS);
+                console.log('Writer Presale address: ', WRITER_PRESALE_ADDRESS);
                 console.log('Token name: ', TOKEN_NAME);
                 console.log('Token symbol: ', TOKEN_SYMBOL)
 
@@ -59,7 +84,12 @@ module.exports = async function (deployer, network, accounts) {
                     SWAP_ADDRESS,
                     TEAM_ADDRESS,
                     DEV_ADDRESS,
-                    UNI_ADDRESS
+                    UNI_ADDRESS,
+                    UNI_PRESALE_ADDRESS,
+                    MARKETING_PRESALE_ADDRESS,
+                    DEV_PRESALE_ADDRESS,
+                    WEB_PRESALE_ADDRESS,
+                    WRITER_PRESALE_ADDRESS                    
                 )
 
                 // DEPLOY AUCTION

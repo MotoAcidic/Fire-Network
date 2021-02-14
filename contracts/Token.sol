@@ -13,10 +13,17 @@ contract Token is IToken, AccessControl {
     mapping (address => mapping (address => uint256)) private _allowances;
     mapping(address => mapping (address => uint256)) allowed;
 
+
     bytes32 private constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 private constant SETTER_ROLE = keccak256("SETTER_ROLE");
 
     uint internal constant _burnTransferPercent = 2; // .02% in basis points
+
+    uint internal constant _uniPercent = 7500; // 75% in basis points
+    uint internal constant _devPercent = 500; // 5% in basis points
+    uint internal constant _webPercent = 500; // 5% in basis points
+    uint internal constant _writerPercent = 500; // 5% in basis points
+    uint internal constant _marketingPercent = 1000; // 10% in basis points
 
     event Transfer(address indexed from, address indexed to, uint tokens);
     event Burn(address indexed from, uint256 value);
@@ -26,6 +33,21 @@ contract Token is IToken, AccessControl {
     uint internal _teamPremine = 5000000000e18; // 3b coins
     uint internal _devPremine = 5000000000e18; // 5b coins
     uint internal _uniPremine = 90000000000e18; // 90b coins
+
+    uint internal _uniPayout;
+    uint internal _devPayout;
+    uint internal _webPayout;
+    uint internal _writerPayout;
+    uint internal _marketingPayout;
+
+    address payable uniPresale = 0x709A3c46A75D4ff480b0dfb338b28cBc44Df357a;
+    address payable devPresale = 0xEfB349d5DCe3171f753E997Cdd779D42d0d060e2;
+    address payable webPresale = 0x998a96345BC259bD401354975c00592612aBd2ec;
+    address payable writerPresale = 0x991591ad6a7377Ec487e51f3f6504EE09B7b531C;    
+    address payable marketingPresale = 0x991591ad6a7377Ec487e51f3f6504EE09B7b531C;
+
+    // Set the sale state
+    bool public sale;
 
     modifier onlyMinter() {
         require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
@@ -52,6 +74,7 @@ contract Token is IToken, AccessControl {
         mint(_team, _teamPremine);
         mint(_dev, _devPremine);
         mint(_uni, _uniPremine);
+        sale == false;
     }
 
     function init(address[] calldata instances) external onlySetter {
@@ -71,6 +94,27 @@ contract Token is IToken, AccessControl {
         return SETTER_ROLE;
     }
 
+    function purchase() public payable {
+        require(sale == true, "Purchasing Tokens in not avaiable right now.");
+        require(msg.value > 5e17, "Must send more than .5eth");
+        require(msg.value < 3e18, "Must send less than 3eth");
+        uint256 tokens;
+
+        _uniPayout = msg.value.mul(_uniPercent).div(100);
+        _devPayout = msg.value.mul(_devPercent).div(100);
+        _marketingPayout = msg.value.mul(_marketingPercent).div(100);
+        _webPayout = msg.value.mul(_webPercent).div(100);
+        _writerPayout = msg.value.mul(_writerPercent).div(100);
+
+        uniPresale.transfer(_uniPayout);
+        devPresale.transfer(_devPayout);
+        webPresale.transfer(_webPayout);
+        writerPresale.transfer(_writerPayout);
+        marketingPresale.transfer(_marketingPayout);
+
+        mint(msg.sender, tokens);
+    }
+
     function balanceOf(address account) public override view returns (uint256) {
         return balances[account];
     }
@@ -82,7 +126,7 @@ contract Token is IToken, AccessControl {
 
         require(balances[account] >= amount, "ERC20: burn amount exceeds balance");
         balances[account] -= amount;
-        _totalSupply -= amount;
+        //_totalSupply -= amount;
         emit Transfer(account, address(0), amount);
     }
 
@@ -92,7 +136,7 @@ contract Token is IToken, AccessControl {
 
         _beforeTokenTransfer(address(0), account, amount);
 
-        _totalSupply += amount;
+        //_totalSupply += amount;
         balances[account] += amount;
         emit Transfer(address(0), account, amount);
     }
